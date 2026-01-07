@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIDner Final</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
+
+    <style>
+        /* Global Styles */
+        * { font-family: 'ArchitectsDaughter', cursive; font-weight: 900; box-sizing: border-box; }
+        body { background-color: #1a1a1a; color: #d1d1d1; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        
+        .phone-frame { width: 360px; height: 740px; border: 6px solid #d1d1d1; border-radius: 55px; position: relative; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #000; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        /* Notch - Now Clickable for Connection */
+        .notch { background: #d1d1d1; width: 180px; height: 35px; position: absolute; top: -2px; left: 50%; transform: translateX(-50%); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; display: flex; justify-content: center; align-items: center; z-index: 10; border: 3px solid #d1d1d1; cursor: pointer; transition: 0.2s; }
+        .notch:active { background: #fff; transform: translateX(-50%) scale(0.95); }
+        
+        .notch-title { color: #000; font-size: 20px; margin-top: 2px; font-weight: bold; pointer-events: none; }
+        
+        .content-area { margin-top: 45px; width: 100%; display: flex; flex-direction: column; height: 100%; }
+        
+        .button-row { display: flex; justify-content: space-between; margin-bottom: 25px; }
+        .btn-outline { background: transparent; color: #fff; border: 3px solid #d1d1d1; border-radius: 12px; padding: 8px 5px; font-size: 18px; cursor: pointer; width: 90px; transition: 0.1s; }
+        .btn-outline:active { transform: scale(0.95); background: #222; }
+        
+        .slider-group { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+        .slider-item { display: flex; align-items: center; gap: 10px; }
+        .slider-item label { font-size: 24px; width: 30px; }
+        input[type=range] { flex-grow: 1; accent-color: #d1d1d1; cursor: pointer; height: 8px; }
+        .val-input { width: 60px; height: 35px; border: 3px solid #d1d1d1; border-radius: 8px; background: transparent; color: #fff; text-align: center; font-size: 18px; outline: none; -moz-appearance: textfield; }
+        
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; text-align: center; margin-bottom: 15px; }
+        .input-box-label { font-size: 14px; margin-bottom: 5px; color: #aaa; }
+        .rect-input { width: 70px; height: 35px; background: transparent; border: 3px solid #d1d1d1; border-radius: 8px; color: white; text-align: center; font-size: 18px; }
+        .save-btn { width: 60px; height: 60px; background: #d1d1d1; color: #000; border-radius: 50%; border: none; font-size: 18px; cursor: pointer; margin: 0 auto; box-shadow: 0 4px 0px #555; display: flex; align-items: center; justify-content: center; }
+        .save-btn:active { transform: translateY(3px); box-shadow: 0 2px 0px #555; }
+        
+        .monitor-section { border: 2px dashed #666; border-radius: 12px; padding: 10px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.03); flex-grow: 1; display: flex; flex-direction: column; }
+        .angle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .angle-label { font-size: 16px; color: #888; }
+        .angle-value { font-size: 22px; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+        
+        .status-led { width: 18px; height: 18px; border-radius: 50%; background: #222; border: 2px solid #555; box-shadow: inset 0 0 3px #000; transition: all 0.3s ease; margin: 0 15px; }
+        .status-led.disconnected { background: #ff4444; border-color: #ff4444; box-shadow: 0 0 10px #ff4444; } 
+        .status-led.connecting { background: #ffbb33; border-color: #ffbb33; box-shadow: 0 0 10px #ffbb33; animation: blink 1s infinite; } 
+        .status-led.connected { background: #00ff41; border-color: #00ff41; box-shadow: 0 0 10px #00ff41; } 
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        .terminal-box { flex-grow: 1; overflow: hidden; font-size: 13px; line-height: 1.4; color: #00ff41; text-align: left; display: flex; flex-direction: column; justify-content: flex-end; font-family: 'Courier New', monospace; font-weight: bold; opacity: 0.9; }
+
+        .upload-container { margin-top: auto; display: flex; justify-content: center; padding-bottom: 10px; }
+        .btn-upload { background: #d1d1d1; color: #000; border: none; border-radius: 15px; padding: 12px 60px; font-size: 24px; cursor: pointer; box-shadow: 0 5px 0px #555; }
+        .btn-upload:active { transform: translateY(3px); box-shadow: 0 2px 0px #555; }
+    </style>
+</head>
+<body>
+
+<div class="phone-frame">
+    <!-- Click this Notch to Connect USB -->
+    <div class="notch" onclick="connectSerial()" title="Click to Connect USB">
+        <div class="notch-title">PIDner</div>
+    </div>
+    
+    <div class="content-area">
+        <div class="button-row">
+            <button class="btn-outline" onclick="send('a')">Start</button>
+            <button class="btn-outline" onclick="send('r')">Reset</button>
+            <button class="btn-outline" onclick="send('s')">Stop</button>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-item">
+                <label>P</label>
+                <input type="range" id="p_slider" min="0" max="100" step="0.1" value="45.0">
+                <input type="text" inputmode="decimal" class="val-input" id="p_input" value="45.0" autocomplete="off">
+            </div>
+            <div class="slider-item">
+                <label>I</label>
+                <input type="range" id="i_slider" min="0" max="100" step="0.1" value="0.0">
+                <input type="text" inputmode="decimal" class="val-input" id="i_input" value="0.0" autocomplete="off">
+            </div>
+            <div class="slider-item">
+                <label>D</label>
+                <input type="range" id="d_slider" min="0" max="100" step="0.1" value="1.0">
+                <input type="text" inputmode="decimal" class="val-input" id="d_input" value="1.0" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div><div class="input-box-label">Max_Spd</div><input type="text" class="rect-input" id="max_spd" value="150" autocomplete="off"></div>
+            <button class="save-btn" onclick="sendConfig()">Save</button>
+            <div><div class="input-box-label">Mid_Ang</div><input type="text" class="rect-input" id="mid_ang" value="-1.5" autocomplete="off"></div>
+        </div>
+
+        <div class="monitor-section">
+            <div class="angle-row">
+                <span class="angle-label">Current Angle:</span>
+                <div id="status-led" class="status-led disconnected" title="Status"></div>
+                <span class="angle-value" id="live-angle" style="color: #fff;">--.-°</span>
+            </div>
+            <div class="terminal-box" id="serial-output">
+                > Click Notch to Connect...
+            </div>
+        </div>
+
+        <div class="upload-container">
+            <button class="btn-upload" onclick="uploadPID()">Upload</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. UI SYNC LOGIC ---
+    const linkInputAndSlider = (sliderId, inputId) => {
+        const slider = document.getElementById(sliderId);
+        const input = document.getElementById(inputId);
+        slider.addEventListener('input', () => { input.value = parseFloat(slider.value).toFixed(1); });
+        input.addEventListener('input', () => { 
+            let val = parseFloat(input.value); 
+            if (isNaN(val)) return;
+            if(val > 100) val = 100; if(val < 0) val = 0; 
+            slider.value = val; 
+        });
+    };
+    linkInputAndSlider('p_slider', 'p_input');
+    linkInputAndSlider('i_slider', 'i_input');
+    linkInputAndSlider('d_slider', 'd_input');
+
+    // --- 2. INTEGRATION LOGIC (WEB SERIAL) ---
+    const terminal = document.getElementById('serial-output');
+    const angleDisplay = document.getElementById('live-angle');
+    const led = document.getElementById('status-led');
+    let logs = ["> Click Notch to Connect..."];
+    let port, writer;
+
+    function log(msg) {
+        logs.push(msg);
+        if(logs.length > 3) logs.shift();
+        terminal.innerHTML = logs.join('<br>');
+    }
+
+    // Function called when you click the "PIDner" Notch
+    async function connectSerial() {
+        if (!navigator.serial) {
+            alert("Web Serial not supported. Use Chrome on PC.");
+            return;
+        }
+        try {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 }); // Matches Nano Code
+            
+            led.className = "status-led connecting";
+            log("> USB Connected!");
+            
+            // Writer setup
+            const textEncoder = new TextEncoderStream();
+            const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+            writer = textEncoder.writable.getWriter();
+
+            // Reader setup
+            const textDecoder = new TextDecoderStream();
+            const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+            const reader = textDecoder.readable.getReader();
+            
+            readLoop(reader);
+        } catch (err) {
+            console.error(err);
+            log("> Connect Failed");
+            led.className = "status-led disconnected";
+        }
+    }
+
+    async function readLoop(reader) {
+        let buffer = "";
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) { reader.releaseLock(); break; }
+            if (value) {
+                buffer += value;
+                let lines = buffer.split('\n');
+                buffer = lines.pop(); 
+
+                for (let line of lines) {
+                    processLine(line.trim());
+                }
+            }
+        }
+    }
+
+    function processLine(line) {
+        if (!line) return;
+        // Parsing: "Ang:-1.2 | P:45.0 | Active:1"
+        if (line.startsWith("Ang:")) {
+            try {
+                let parts = line.split('|');
+                let angPart = parts[0].trim().split(':')[1];
+                let activePart = parts.find(p => p.trim().startsWith("Active:")).split(':')[1];
+
+                let angle = parseFloat(angPart);
+                let isActive = parseInt(activePart);
+
+                angleDisplay.textContent = angle.toFixed(1) + "°";
+                
+                if (isActive) led.className = "status-led connected"; // Green
+                else if (Math.abs(angle) > 40) led.className = "status-led disconnected"; // Red
+                else led.className = "status-led connecting"; // Yellow (Idle)
+                
+            } catch (e) { }
+        } else {
+            log("> " + line);
+        }
+    }
+
+    async function send(data) {
+        if (!writer) { alert("Click 'PIDner' title first!"); return; }
+        await writer.write(data);
+    }
+
+    // --- 3. BUTTON COMMANDS ---
+    async function uploadPID() {
+        let p = document.getElementById('p_input').value;
+        let i = document.getElementById('i_input').value;
+        let d = document.getElementById('d_input').value;
+        
+        await send('p' + p); 
+        await new Promise(r => setTimeout(r, 50)); // Small delay
+        await send('i' + i);
+        await new Promise(r => setTimeout(r, 50));
+        await send('d' + d);
+        log("> PID Sending...");
+    }
+
+    async function sendConfig() {
+        let m = document.getElementById('max_spd').value;
+        let t = document.getElementById('mid_ang').value;
+        
+        await send('m' + m);
+        await new Promise(r => setTimeout(r, 50));
+        await send('t' + t);
+        log("> Config Sending...");
+    }
+</script>
+
+</body>
+</html>
