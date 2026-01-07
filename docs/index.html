@@ -170,7 +170,7 @@
             readLoop(reader);
         } catch (err) {
             console.error(err);
-            log("> Connect Failed");
+            log("> Connect Failed: " + (err && err.message ? err.message : err));
             led.className = "status-led disconnected";
         }
     }
