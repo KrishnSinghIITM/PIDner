@@ -147,9 +147,8 @@
     // Function called when you click the "PIDner" Notch
     async function connectSerial() {
         if (!navigator.serial) {
-            alert("Web Serial not supported. Use Chrome on PC.");
-            return;
-        }
+            // Web Serial not available (mobile browsers commonly). Offer WebSocket bridge fallback.
+            const bridge = prompt("Web Serial not available. Enter WebSocket bridge host (host:port), or Cancel to abort:\
         try {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 9600 }); // Matches Nano Code
